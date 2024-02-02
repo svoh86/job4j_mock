@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.ui.ConcurrentModel;
 import ru.job4j.site.SiteSrv;
@@ -14,11 +16,14 @@ import ru.job4j.site.domain.Breadcrumb;
 import ru.job4j.site.dto.CategoryDTO;
 import ru.job4j.site.dto.InterviewDTO;
 import ru.job4j.site.dto.TopicDTO;
+import ru.job4j.site.dto.TopicIdNameDTO;
 import ru.job4j.site.service.*;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -56,7 +61,7 @@ class IndexControllerTest {
     @BeforeEach
     void initTest() {
         this.indexController = new IndexController(
-                categoriesService, interviewsService, authService, notificationService, profilesService
+                categoriesService, interviewsService, authService, notificationService, profilesService, topicsService
         );
     }
 
@@ -78,6 +83,9 @@ class IndexControllerTest {
         topicDTO2.setName("topic2");
         var cat1 = new CategoryDTO(1, "name1");
         var cat2 = new CategoryDTO(2, "name2");
+        var topicIdNameDTO = new TopicIdNameDTO();
+        var topicIdNameDTO2 = new TopicIdNameDTO();
+        Map<CategoryDTO, Long> categoriesMap = Map.of(cat1, 2L);
         var listCat = List.of(cat1, cat2);
         var firstInterview = new InterviewDTO(1, 1, 1, 1,
                 "interview1", "description1", "contact1",
@@ -86,10 +94,16 @@ class IndexControllerTest {
                 "interview2", "description2", "contact2",
                 "30.02.2024", "09.10.2023", 1);
         var listInterviews = List.of(firstInterview, secondInterview);
+        Page<InterviewDTO> interviewDTOPage = new PageImpl<>(List.of(firstInterview));
+
         when(topicsService.getByCategory(cat1.getId())).thenReturn(List.of(topicDTO1));
         when(topicsService.getByCategory(cat2.getId())).thenReturn(List.of(topicDTO2));
         when(categoriesService.getMostPopular()).thenReturn(listCat);
         when(interviewsService.getByType(1)).thenReturn(listInterviews);
+        when(topicsService.getTopicIdNameDtoByCategory(cat1.getId())).thenReturn(List.of(topicIdNameDTO, topicIdNameDTO2));
+        when(interviewsService.getByTopicId(topicIdNameDTO.getId(), 0, Integer.MAX_VALUE)).thenReturn(interviewDTOPage);
+        when(mock(PageImpl.class).getTotalElements()).thenReturn(2L);
+
         var listBread = List.of(new Breadcrumb("Главная", "/"));
         var model = new ConcurrentModel();
         var view = indexController.getIndexPage(model, null);
@@ -99,7 +113,7 @@ class IndexControllerTest {
         var actualInterviews = model.getAttribute("new_interviews");
 
         assertThat(view).isEqualTo("index");
-        assertThat(actualCategories).usingRecursiveComparison().isEqualTo(listCat);
+        assertThat(actualCategories).usingRecursiveComparison().isEqualTo(categoriesMap);
         assertThat(actualBreadCrumbs).usingRecursiveComparison().isEqualTo(listBread);
         assertThat(actualUserInfo).isNull();
         assertThat(actualInterviews).usingRecursiveComparison().isEqualTo(listInterviews);
