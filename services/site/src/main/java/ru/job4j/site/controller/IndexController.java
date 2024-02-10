@@ -41,13 +41,12 @@ public class IndexController {
         Map<CategoryDTO, Long> categories = new ConcurrentHashMap<>();
         List<CategoryDTO> categoryDTOList = categoriesService.getMostPopular();
         for (CategoryDTO categoryDTO : categoryDTOList) {
-            long count = 0;
-            List<TopicIdNameDTO> topicIdNameDtos = topicsService.getTopicIdNameDtoByCategory(categoryDTO.getId());
-            for (TopicIdNameDTO topicIdNameDTO : topicIdNameDtos) {
-                Page<InterviewDTO> interviewDTOPage = interviewsService.getByTopicId(topicIdNameDTO.getId(), 0, Integer.MAX_VALUE);
-                count += interviewDTOPage.getTotalElements();
-                categories.put(categoryDTO, count);
-            }
+            List<Integer> topicIds = topicsService.getTopicIdNameDtoByCategory(categoryDTO.getId()).stream()
+                    .map(TopicIdNameDTO::getId)
+                    .toList();
+            Page<InterviewDTO> interviewDTOPage = interviewsService.getByTopicsIds(topicIds, 0, Integer.MAX_VALUE);
+            long totalElements = interviewDTOPage.getTotalElements();
+            categories.put(categoryDTO, totalElements);
         }
         try {
             model.addAttribute("categories", categories);
