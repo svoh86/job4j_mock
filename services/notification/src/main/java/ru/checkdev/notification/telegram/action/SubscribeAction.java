@@ -11,44 +11,42 @@ import ru.checkdev.notification.service.TelegramUserService;
 import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
 
-import java.util.Calendar;
-import java.util.Map;
-
 /**
  * 3. Мидл
- * Класс реализует пункт меню регистрации нового пользователя в телеграм бот
+ * Класс реализует пункт меню подписки через ввод логина и пароля
  */
 @AllArgsConstructor
 @Slf4j
-public class RegAction implements Action {
+public class SubscribeAction implements Action {
     private static final String ERROR_OBJECT = "error";
-    private static final String URL_AUTH_REGISTRATION = "/registration";
+    private static final String URL_AUTH_PERSON_CHECK = "/person/check";
     private final TgConfig tgConfig = new TgConfig("tg/", 8);
     private final TgAuthCallWebClint authCallWebClint;
-    private final String urlSiteAuth;
     private final TelegramUserService telegramUserService;
 
     @Override
     public BotApiMethod<Message> handle(Message message) {
         var chatId = message.getChatId().toString();
         var sl = System.lineSeparator();
-        if (telegramUserService.existsTelegramUserByChatId(message.getChatId())) {
-            var validation = "Вы уже зарегистрированы!" + sl
-                    + "/check";
-            return new SendMessage(chatId, validation);
+        var text = "";
+        if (!telegramUserService.existsTelegramUserByChatId(message.getChatId())) {
+            text = "Вы не зарегистрированы" + sl
+                    + "/new";
+            return new SendMessage(chatId, text);
         }
-        var text = "Введите username/email для регистрации:";
+        text = "Введите почту и пароль в формате:" + sl
+                + "email:password";
         return new SendMessage(chatId, text);
     }
 
     /**
      * Метод формирует ответ пользователю.
      * Весь метод разбит на 4 этапа проверки.
-     * 1. Проверка на соответствие формату Username/Email введенного текста.
+     * 1. Проверка на соответствие формату Email/Password введенного текста.
      * 2. Отправка данных в сервис Auth и если сервис не доступен сообщаем
      * 3. Если сервис доступен, получаем от него ответ и обрабатываем его.
-     * 3.1 ответ при ошибке регистрации
-     * 3.2 ответ при успешной регистрации + добавляем TelegramUser в БД
+     * 3.1 ответ при ошибке оформления подписки
+     * 3.2 ответ при успешной подписке + обновляем TelegramUser в БД
      *
      * @param message Message
      * @return BotApiMethod<Message>
@@ -59,22 +57,20 @@ public class RegAction implements Action {
         var sourceString = message.getText();
         var text = "";
         var sl = System.lineSeparator();
-        if (!tgConfig.isUsernameAndEmail(sourceString)) {
-            text = "Введите данные в формате username/email" + sl
+        if (!tgConfig.isEmailAndPassword(sourceString)) {
+            text = "Введите данные в формате email:password" + sl
                     + "попробуйте снова." + sl
-                    + "/new";
+                    + "/subscribe";
             return new SendMessage(chatId, text);
         }
-        String[] strings = sourceString.split("/");
-        var username = strings[0];
-        var email = strings[1];
 
-        var password = tgConfig.getPassword();
-        var person = new PersonDTO(0, username, email, password, true, null,
-                Calendar.getInstance());
+        String[] strings = sourceString.split(":");
+        var person = new PersonDTO();
+        person.setEmail(strings[0]);
+        person.setPassword(strings[1]);
         Object result;
         try {
-            result = authCallWebClint.doPost(URL_AUTH_REGISTRATION, person).block();
+            result = authCallWebClint.doPost(URL_AUTH_PERSON_CHECK, person).block();
         } catch (Exception e) {
             log.error("WebClient doPost error: {}", e.getMessage());
             text = "Сервис не доступен попробуйте позже" + sl
@@ -84,22 +80,14 @@ public class RegAction implements Action {
 
         var mapObject = tgConfig.getObjectToMap(result);
         if (mapObject.containsKey(ERROR_OBJECT)) {
-            text = "Ошибка регистрации: " + mapObject.get(ERROR_OBJECT);
+            text = "Ошибка оформления подписки: " + mapObject.get(ERROR_OBJECT);
             return new SendMessage(chatId, text);
         }
 
-        Map<String, Object> personMap = tgConfig.getObjectToMapWithValueObject(mapObject.get("person"));
-        telegramUserService.save(
-                new TelegramUser(Long.parseLong(chatId),
-                        (int) personMap.get("id"),
-                        person.getEmail(),
-                        person.getUsername(),
-                        false));
-        text = "Вы зарегистрированы: " + sl
-                + "Логин: " + email + sl
-                + "Username: " + username + sl
-                + "Пароль: " + password + sl
-                + urlSiteAuth;
+        TelegramUser telegramUser = telegramUserService.findByChatId(Long.parseLong(chatId)).get();
+        telegramUser.setNotify(true);
+        telegramUserService.save(telegramUser);
+        text = "Подписка оформлена!";
         return new SendMessage(chatId, text);
     }
 }

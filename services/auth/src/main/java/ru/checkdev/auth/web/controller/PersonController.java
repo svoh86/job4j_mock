@@ -147,4 +147,22 @@ public class PersonController {
         map.put("getTotal", persons.showed());
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
+
+    @PostMapping("/check")
+    public Object check(@RequestBody Profile profile) {
+        boolean rsl = this.persons.findByEmailAndPassword(profile.getEmail(), profile.getPassword());
+        if (rsl) {
+            return new Object() {
+                public String getOk() {
+                    return "ok";
+                }
+            };
+        } else {
+            return new Object() {
+                public String getError() {
+                    return "Пользователь не найден!";
+                }
+            };
+        }
+    }
 }

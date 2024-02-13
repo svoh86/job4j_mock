@@ -7,9 +7,8 @@ import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
-import ru.checkdev.notification.telegram.action.Action;
-import ru.checkdev.notification.telegram.action.InfoAction;
-import ru.checkdev.notification.telegram.action.RegAction;
+import ru.checkdev.notification.service.TelegramUserService;
+import ru.checkdev.notification.telegram.action.*;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
 
 import java.util.List;
@@ -20,9 +19,6 @@ import java.util.Map;
  * Инициализация телеграм бот,
  * username = берем из properties
  * token = берем из properties
- *
- * @author Dmitry Stepanov, user Dmitry
- * @since 12.09.2023
  */
 @Component
 @Slf4j
@@ -35,20 +31,27 @@ public class TgRun {
     @Value("${server.site.url.login}")
     private String urlSiteAuth;
 
-    public TgRun(TgAuthCallWebClint tgAuthCallWebClint) {
+    private final TelegramUserService telegramUserService;
+
+    public TgRun(TgAuthCallWebClint tgAuthCallWebClint,
+                 TelegramUserService telegramUserService) {
         this.tgAuthCallWebClint = tgAuthCallWebClint;
+        this.telegramUserService = telegramUserService;
     }
 
     @Bean
     public void initTg() {
         Map<String, Action> actionMap = Map.of(
                 "/start", new InfoAction(List.of(
-                        "/start", "/new")),
-                "/new", new RegAction(tgAuthCallWebClint, urlSiteAuth)
+                        "/start", "/new", "/check", "/forget", "/subscribe", "/unsubscribe")),
+                "/new", new RegAction(tgAuthCallWebClint, urlSiteAuth, telegramUserService),
+                "/check", new CheckAction(telegramUserService),
+                "/forget", new ForgetAction(tgAuthCallWebClint, telegramUserService),
+                "/subscribe", new SubscribeAction(tgAuthCallWebClint, telegramUserService),
+                "/unsubscribe", new UnsubscribeAction(telegramUserService)
         );
         try {
             BotMenu menu = new BotMenu(actionMap, username, token);
-
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(menu);
         } catch (TelegramApiException e) {

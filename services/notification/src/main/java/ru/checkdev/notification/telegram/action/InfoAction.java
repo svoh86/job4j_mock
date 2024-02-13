@@ -9,9 +9,6 @@ import java.util.List;
 /**
  * 3. Мидл
  * Класс реализует вывод доступных команд телеграмм бота
- *
- * @author Dmitry Stepanov, user Dmitry
- * @since 12.09.2023
  */
 public class InfoAction implements Action {
     private final List<String> actions;
@@ -25,9 +22,13 @@ public class InfoAction implements Action {
         var chatId = message.getChatId().toString();
         String sl = System.lineSeparator();
         var out = new StringBuilder();
-        out.append("Выберите действие:").append(sl);
-        for (String action : actions) {
-            out.append(action).append(sl);
+        if (!actions.contains(message.getText())) {
+            out.append("Команда не поддерживается! Список доступных команд: /start").append(sl);
+        } else {
+            out.append("Выберите действие:").append(sl);
+            for (String action : actions) {
+                out.append(action).append(sl);
+            }
         }
         return new SendMessage(chatId, out.toString());
     }

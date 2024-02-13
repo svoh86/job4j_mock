@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 public class TgConfig {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final Pattern EMAIL_PATTERN = Pattern.compile("\\w+([\\.-]?\\w+)*@\\w+([\\.-]?\\w+)*\\.\\w{2,4}");
+    private static final Pattern USERNAME_EMAIL_PATTERN = Pattern.compile("\\w+/" + EMAIL_PATTERN);
+    private static final Pattern EMAIL_PASSWORD_PATTERN = Pattern.compile(EMAIL_PATTERN + ":.+");
     private final String prefix;
     private final int passSize;
 
@@ -54,5 +56,31 @@ public class TgConfig {
      */
     public Map<String, String> getObjectToMap(Object object) {
         return MAPPER.convertValue(object, Map.class);
+    }
+
+    /**
+     * Метод преобразовывает Object в карту Map<String,Object>
+     *
+     * @param object Object or Person(Auth)
+     * @return Map
+     */
+    public Map<String, Object> getObjectToMapWithValueObject(Object object) {
+        return MAPPER.convertValue(object, Map.class);
+    }
+
+    /**
+     * Метод проверяет входящую строку на соответствие формату username/email
+     *
+     * @param sourceString String
+     * @return boolean
+     */
+    public boolean isUsernameAndEmail(String sourceString) {
+        Matcher matcher = USERNAME_EMAIL_PATTERN.matcher(sourceString);
+        return matcher.matches();
+    }
+
+    public boolean isEmailAndPassword(String sourceString) {
+        Matcher matcher = EMAIL_PASSWORD_PATTERN.matcher(sourceString);
+        return matcher.matches();
     }
 }
