@@ -83,7 +83,7 @@ class TgAuthCallWebClintTest {
                 .set(Calendar.MONTH, Calendar.OCTOBER)
                 .set(Calendar.YEAR, 2023)
                 .build();
-        var personDto = new PersonDTO(0,"mail", null, "password", true, null, created);
+        var personDto = new PersonDTO(0, "mail", null, "password", true, null, created);
         when(webClientMock.post()).thenReturn(requestBodyUriMock);
         when(requestBodyUriMock.uri("/person/created")).thenReturn(requestBodyMock);
         when(requestBodyMock.bodyValue(personDto)).thenReturn(requestHeadersMock);
