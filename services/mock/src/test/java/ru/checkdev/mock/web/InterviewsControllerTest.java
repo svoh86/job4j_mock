@@ -17,10 +17,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import ru.checkdev.mock.MockSrv;
 import ru.checkdev.mock.domain.Interview;
 import ru.checkdev.mock.repository.InterviewRepository;
+import ru.checkdev.mock.service.CategoriesService;
 import ru.checkdev.mock.service.InterviewService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.IntStream;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -43,6 +45,9 @@ class InterviewsControllerTest {
 
     @MockBean
     private InterviewRepository interviewRepository;
+
+    @MockBean
+    private CategoriesService categoriesService;
 
     private Interview interview = Interview.of()
             .id(1)
@@ -94,6 +99,16 @@ class InterviewsControllerTest {
         when(service.findPaging(Mockito.anyInt(), Mockito.anyInt()))
                 .thenReturn(page);
         mockMvc.perform(get("/interviews/findByTopicsIds/1,2,3"))
+                .andDo(print())
+                .andExpectAll(status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON));
+    }
+
+    @Test
+    @WithMockUser
+    public void whenCount() throws Exception {
+        when(categoriesService.getInterviewCount(List.of(1, 2, 3))).thenReturn(Map.of(1, 4L));
+        mockMvc.perform(get("/interviews/count/1,2,3"))
                 .andDo(print())
                 .andExpectAll(status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));

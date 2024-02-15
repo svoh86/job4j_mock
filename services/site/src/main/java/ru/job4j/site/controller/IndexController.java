@@ -14,11 +14,9 @@ import ru.job4j.site.dto.TopicIdNameDTO;
 import ru.job4j.site.service.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import static ru.job4j.site.controller.RequestResponseTools.getToken;
 
@@ -38,18 +36,14 @@ public class IndexController {
         RequestResponseTools.addAttrBreadcrumbs(model,
                 "Главная", "/"
         );
-        Map<CategoryDTO, Long> categories = new ConcurrentHashMap<>();
-        List<CategoryDTO> categoryDTOList = categoriesService.getMostPopular();
-        for (CategoryDTO categoryDTO : categoryDTOList) {
-            List<Integer> topicIds = topicsService.getTopicIdNameDtoByCategory(categoryDTO.getId()).stream()
-                    .map(TopicIdNameDTO::getId)
-                    .toList();
-            Page<InterviewDTO> interviewDTOPage = interviewsService.getByTopicsIds(topicIds, 0, Integer.MAX_VALUE);
-            long totalElements = interviewDTOPage.getTotalElements();
-            categories.put(categoryDTO, totalElements);
-        }
+        List<CategoryDTO> categories = categoriesService.getMostPopular();
+        Map<Integer, Long> interviewsCount = interviewsService.getInterviewCount(
+                categories.stream()
+                .map(CategoryDTO::getId)
+                .toList());
         try {
             model.addAttribute("categories", categories);
+            model.addAttribute("interviewsCount", interviewsCount);
             var token = getToken(req);
             if (token != null) {
                 var userInfo = authService.userInfo(token);

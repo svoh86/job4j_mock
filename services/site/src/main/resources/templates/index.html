@@ -95,20 +95,24 @@
                             <td>
                                 <div>
                                     <a class="fw-bold text-dark text-decoration-none"
-                                       th:href="@{|/topics/${category.key.id}|}">
-                                        <h5 th:text="${category.key.name}"></h5>
+                                       th:href="@{|/topics/${category.id}|}">
+                                        <h5 th:text="${category.name}"></h5>
                                     </a>
                                 </div>
                                 <small class="mb-2 text-muted">
                                     <span><i class="fas fa-eye pr-3"></i> : </span>
-                                    <span class="fw-bold" th:text="${category.key.total}"></span>
+                                    <span class="fw-bold" th:text="${category.total}"></span>
                                     <span class="mr-3">Тем : </span>
-                                    <span class="fw-bold" th:text="${category.key.topicsSize}"></span>
+                                    <span class="fw-bold" th:text="${category.topicsSize}"></span>
                                     </span>
                                 </small>
                             </td>
                             <td>
-                                <span class="badge bg-success" th:text="${category.value}"/>
+                                <span th:each="interviewCount: ${interviewsCount}">
+                                    <span th:if="${#strings.equals(interviewCount.key, #strings.toString(category.id))}">
+                                        <span class="badge bg-success" th:text="${interviewCount.value}"/>
+                                    </span>
+                                </span>
                             </td>
                         </tr>
                         </tbody>

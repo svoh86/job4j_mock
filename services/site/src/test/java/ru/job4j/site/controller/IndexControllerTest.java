@@ -85,7 +85,7 @@ class IndexControllerTest {
         var cat2 = new CategoryDTO(2, "name2");
         var topicIdNameDTO = new TopicIdNameDTO();
         var topicIdNameDTO2 = new TopicIdNameDTO();
-        Map<CategoryDTO, Long> categoriesMap = Map.of(cat1, 1L, cat2, 1L);
+        List<CategoryDTO> categories = List.of(cat1, cat2);
         var listCat = List.of(cat1, cat2);
         var firstInterview = new InterviewDTO(1, 1, 1, 1,
                 "interview1", "description1", "contact1",
@@ -114,7 +114,7 @@ class IndexControllerTest {
         var actualInterviews = model.getAttribute("new_interviews");
 
         assertThat(view).isEqualTo("index");
-        assertThat(actualCategories).usingRecursiveComparison().isEqualTo(categoriesMap);
+        assertThat(actualCategories).usingRecursiveComparison().isEqualTo(categories);
         assertThat(actualBreadCrumbs).usingRecursiveComparison().isEqualTo(listBread);
         assertThat(actualUserInfo).isNull();
         assertThat(actualInterviews).usingRecursiveComparison().isEqualTo(listInterviews);
