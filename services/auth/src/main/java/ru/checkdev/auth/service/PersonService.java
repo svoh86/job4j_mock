@@ -1,7 +1,6 @@
 package ru.checkdev.auth.service;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.RandomStringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -22,8 +21,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import ru.checkdev.auth.domain.Notify;
-import ru.checkdev.auth.domain.Profile;
 import ru.checkdev.auth.domain.Photo;
+import ru.checkdev.auth.domain.Profile;
 import ru.checkdev.auth.domain.Role;
 import ru.checkdev.auth.repository.PersonRepository;
 
@@ -311,8 +310,20 @@ public class PersonService {
         return emptyNames;
     }
 
-    public boolean findByEmailAndPassword(String email, String password) {
+    @Transactional
+    public Optional<Profile> subscribe(String email, String password) {
         Profile profile = persons.findByEmail(email);
-        return profile != null && encoding.matches(password, profile.getPassword());
+        if (profile != null && encoding.matches(password, profile.getPassword())) {
+            persons.updateNotify(true, email);
+            return Optional.of(profile);
+        }
+        return Optional.empty();
+    }
+
+    @Transactional
+    public Boolean unsubscribe(int id) {
+        var profileOptional = persons.findById(id);
+        profileOptional.ifPresent(profile -> persons.updateNotify(false, profile.getEmail()));
+        return profileOptional.isPresent();
     }
 }

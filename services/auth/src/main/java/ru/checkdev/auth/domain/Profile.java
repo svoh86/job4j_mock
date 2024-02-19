@@ -75,6 +75,7 @@ public class Profile {
     private Calendar updated;
 
     private Calendar created;
+    private boolean notify;
 
     public Profile() {
     }
@@ -263,6 +264,15 @@ public class Profile {
 
     public void setCreated(Calendar created) {
         this.created = created;
+    }
+
+
+    public boolean isNotify() {
+        return notify;
+    }
+
+    public void setNotify(boolean notify) {
+        this.notify = notify;
     }
 
     @Override

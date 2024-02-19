@@ -6,8 +6,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
-import ru.checkdev.auth.domain.Profile;
 import ru.checkdev.auth.domain.Photo;
+import ru.checkdev.auth.domain.Profile;
 import ru.checkdev.auth.dto.ProfileDTO;
 
 import java.util.List;
@@ -33,6 +33,10 @@ public interface PersonRepository extends CrudRepository<Profile, Integer> {
     @Modifying
     @Query("update profile p set p.username = ?1, p.password = ?2, p.experience = ?3, p.about = ?4, p.aboutShort = ?5, p.photo =?6 where p.email = ?7")
     int updateWithImg(String username, String password, String experience, String about, String aboutShort, Photo photo, String email);
+
+    @Modifying
+    @Query("update profile p set p.notify = ?1 where p.email = ?2")
+    int updateNotify(boolean notify, String email);
 
     @Query("select count(p.id) from profile as p")
     Long total();
@@ -60,7 +64,7 @@ public interface PersonRepository extends CrudRepository<Profile, Integer> {
      * @param id int person id
      * @return ProfileDTO
      */
-    @Query("SELECT new ru.checkdev.auth.dto.ProfileDTO(p.id, p.username, p.experience, p.photo.id, p.updated, p.created) FROM profile p WHERE p.id = :id")
+    @Query("SELECT new ru.checkdev.auth.dto.ProfileDTO(p.id, p.username, p.email, p.experience, p.photo.id, p.updated, p.created, p.notify) FROM profile p WHERE p.id = :id")
     ProfileDTO findProfileById(@Param("id") int id);
 
     /**
@@ -70,6 +74,6 @@ public interface PersonRepository extends CrudRepository<Profile, Integer> {
      *
      * @return List ProfileDTO
      */
-    @Query("SELECT new ru.checkdev.auth.dto.ProfileDTO(p.id, p.username, p.experience, p.photo.id, p.updated, p.created) FROM profile p ORDER BY p.created DESC")
+    @Query("SELECT new ru.checkdev.auth.dto.ProfileDTO(p.id, p.username, p.email, p.experience, p.photo.id, p.updated, p.created, p.notify) FROM profile p ORDER BY p.created DESC")
     List<ProfileDTO> findProfileOrderByCreatedDesc();
 }

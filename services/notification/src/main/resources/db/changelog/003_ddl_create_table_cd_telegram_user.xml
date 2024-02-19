@@ -12,12 +12,6 @@
             <column name="user_id" type="int">
                 <constraints unique="true" nullable="false"/>
             </column>
-            <column  name="email" type="varchar(2000)">
-                <constraints unique="true" nullable="false" />
-            </column>
-            <column  name="username" type="varchar(2000)">
-                <constraints nullable="false" />
-            </column>
         </createTable>
     </changeSet>
 </databaseChangeLog>

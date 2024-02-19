@@ -23,7 +23,4 @@ public class TelegramUser {
     private long chatId;
     @Column(name = "user_id")
     private int userId;
-    private String email;
-    private String username;
-    private boolean notify;
 }

@@ -71,7 +71,7 @@ public class RegAction implements Action {
 
         var password = tgConfig.getPassword();
         var person = new PersonDTO(0, username, email, password, true, null,
-                Calendar.getInstance());
+                Calendar.getInstance(), false);
         Object result;
         try {
             result = authCallWebClint.doPost(URL_AUTH_REGISTRATION, person).block();
@@ -90,11 +90,7 @@ public class RegAction implements Action {
 
         Map<String, Object> personMap = tgConfig.getObjectToMapWithValueObject(mapObject.get("person"));
         telegramUserService.save(
-                new TelegramUser(Long.parseLong(chatId),
-                        (int) personMap.get("id"),
-                        person.getEmail(),
-                        person.getUsername(),
-                        false));
+                new TelegramUser(Long.parseLong(chatId), (int) personMap.get("id")));
         text = "Вы зарегистрированы: " + sl
                 + "Логин: " + email + sl
                 + "Username: " + username + sl

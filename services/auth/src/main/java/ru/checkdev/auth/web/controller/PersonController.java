@@ -148,10 +148,27 @@ public class PersonController {
         return new ResponseEntity<>(map, HttpStatus.OK);
     }
 
-    @PostMapping("/check")
-    public Object check(@RequestBody Profile profile) {
-        boolean rsl = this.persons.findByEmailAndPassword(profile.getEmail(), profile.getPassword());
-        if (rsl) {
+    @PostMapping("/subscribe")
+    public Object subscribe(@RequestBody Profile profile) {
+        var rsl = this.persons.subscribe(profile.getEmail(), profile.getPassword());
+        if (rsl.isPresent()) {
+            return new Object() {
+                public String getOk() {
+                    return "ok";
+                }
+            };
+        } else {
+            return new Object() {
+                public String getError() {
+                    return "Пользователь не найден!";
+                }
+            };
+        }
+    }
+
+    @PostMapping("/unsubscribe")
+    public Object unsubscribe(@RequestBody Profile profile) {
+        if (this.persons.unsubscribe(profile.getId())) {
             return new Object() {
                 public String getOk() {
                     return "ok";

@@ -45,10 +45,10 @@ public class TgRun {
                 "/start", new InfoAction(List.of(
                         "/start", "/new", "/check", "/forget", "/subscribe", "/unsubscribe")),
                 "/new", new RegAction(tgAuthCallWebClint, urlSiteAuth, telegramUserService),
-                "/check", new CheckAction(telegramUserService),
+                "/check", new CheckAction(tgAuthCallWebClint, telegramUserService),
                 "/forget", new ForgetAction(tgAuthCallWebClint, telegramUserService),
                 "/subscribe", new SubscribeAction(tgAuthCallWebClint, telegramUserService),
-                "/unsubscribe", new UnsubscribeAction(telegramUserService)
+                "/unsubscribe", new UnsubscribeAction(tgAuthCallWebClint, telegramUserService)
         );
         try {
             BotMenu menu = new BotMenu(actionMap, username, token);

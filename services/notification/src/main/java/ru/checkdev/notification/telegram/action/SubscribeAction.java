@@ -6,7 +6,6 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.checkdev.notification.domain.PersonDTO;
-import ru.checkdev.notification.domain.TelegramUser;
 import ru.checkdev.notification.service.TelegramUserService;
 import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
@@ -19,7 +18,7 @@ import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
 @Slf4j
 public class SubscribeAction implements Action {
     private static final String ERROR_OBJECT = "error";
-    private static final String URL_AUTH_PERSON_CHECK = "/person/check";
+    private static final String URL_AUTH_PERSON_SUBSCRIBE = "/person/subscribe";
     private final TgConfig tgConfig = new TgConfig("tg/", 8);
     private final TgAuthCallWebClint authCallWebClint;
     private final TelegramUserService telegramUserService;
@@ -46,7 +45,7 @@ public class SubscribeAction implements Action {
      * 2. Отправка данных в сервис Auth и если сервис не доступен сообщаем
      * 3. Если сервис доступен, получаем от него ответ и обрабатываем его.
      * 3.1 ответ при ошибке оформления подписки
-     * 3.2 ответ при успешной подписке + обновляем TelegramUser в БД
+     * 3.2 ответ при успешной подписке
      *
      * @param message Message
      * @return BotApiMethod<Message>
@@ -70,7 +69,7 @@ public class SubscribeAction implements Action {
         person.setPassword(strings[1]);
         Object result;
         try {
-            result = authCallWebClint.doPost(URL_AUTH_PERSON_CHECK, person).block();
+            result = authCallWebClint.doPost(URL_AUTH_PERSON_SUBSCRIBE, person).block();
         } catch (Exception e) {
             log.error("WebClient doPost error: {}", e.getMessage());
             text = "Сервис не доступен попробуйте позже" + sl
@@ -84,9 +83,6 @@ public class SubscribeAction implements Action {
             return new SendMessage(chatId, text);
         }
 
-        TelegramUser telegramUser = telegramUserService.findByChatId(Long.parseLong(chatId)).get();
-        telegramUser.setNotify(true);
-        telegramUserService.save(telegramUser);
         text = "Подписка оформлена!";
         return new SendMessage(chatId, text);
     }

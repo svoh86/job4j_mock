@@ -5,8 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import ru.checkdev.notification.domain.TelegramUser;
+import ru.checkdev.notification.domain.PersonDTO;
 import ru.checkdev.notification.service.TelegramUserService;
+import ru.checkdev.notification.telegram.config.TgConfig;
+import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
 
 /**
  * 3. Мидл
@@ -15,7 +17,11 @@ import ru.checkdev.notification.service.TelegramUserService;
 @AllArgsConstructor
 @Slf4j
 public class UnsubscribeAction implements Action {
+    private static final String ERROR_OBJECT = "error";
+    private static final String URL_AUTH_PERSON_UNSUBSCRIBE = "/person/unsubscribe";
+    private final TgAuthCallWebClint authCallWebClint;
     private final TelegramUserService telegramUserService;
+    private final TgConfig tgConfig = new TgConfig("tg/", 8);
 
     @Override
     public BotApiMethod<Message> handle(Message message) {
@@ -24,19 +30,35 @@ public class UnsubscribeAction implements Action {
 
     @Override
     public BotApiMethod<Message> callback(Message message) {
-        var chatId = message.getChatId();
+        var chatId = message.getChatId().toString();
         var text = "";
         var sl = System.lineSeparator();
-        var userOptional = telegramUserService.findByChatId(chatId);
+        var userOptional = telegramUserService.findByChatId(Long.parseLong(chatId));
         if (userOptional.isEmpty()) {
             text = "Вы не зарегистрированы" + sl
                     + "/new";
-            return new SendMessage(chatId.toString(), text);
+            return new SendMessage(chatId, text);
         }
-        TelegramUser telegramUser = userOptional.get();
-        telegramUser.setNotify(false);
-        telegramUserService.save(telegramUser);
+
+        var person = new PersonDTO();
+        person.setId(userOptional.get().getUserId());
+        Object result;
+        try {
+            result = authCallWebClint.doPost(URL_AUTH_PERSON_UNSUBSCRIBE, person).block();
+        } catch (Exception e) {
+            log.error("WebClient doPost error: {}", e.getMessage());
+            text = "Сервис не доступен попробуйте позже" + sl
+                    + "/start";
+            return new SendMessage(chatId, text);
+        }
+
+        var mapObject = tgConfig.getObjectToMap(result);
+        if (mapObject.containsKey(ERROR_OBJECT)) {
+            text = "Ошибка отмены подписки: " + mapObject.get(ERROR_OBJECT);
+            return new SendMessage(chatId, text);
+        }
+
         text = "Вы отменили подписку!";
-        return new SendMessage(chatId.toString(), text);
+        return new SendMessage(chatId, text);
     }
 }

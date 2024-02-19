@@ -4,8 +4,9 @@
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
          http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.1.xsd">
+    <property name="now" value="now()" dbms="postgresql"/>
     <changeSet id="04" author="svistunov">
-        <addColumn tableName="cd_telegram_user">
+        <addColumn tableName="profile">
             <column name="notify" type="boolean" defaultValueBoolean="false"></column>
         </addColumn>
     </changeSet>

@@ -11,6 +11,7 @@ import ru.checkdev.notification.service.TelegramUserService;
 import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
 
+import java.util.Calendar;
 import java.util.Optional;
 
 /**
@@ -22,6 +23,7 @@ import java.util.Optional;
 public class ForgetAction implements Action {
     private final TgAuthCallWebClint authCallWebClint;
     private final TelegramUserService telegramUserService;
+    private static final String URL_AUTH_FIND_BY_ID = "/profiles/";
     private final static String URL_AUTH_FORGOT = "/forgot";
     private static final String ERROR_OBJECT = "error";
     private final TgConfig tgConfig = new TgConfig("tg/", 8);
@@ -43,16 +45,22 @@ public class ForgetAction implements Action {
             return new SendMessage(chatId, text);
         }
         var password = tgConfig.getPassword();
-        var person = new PersonDTO(
-                userOptional.get().getUserId(),
-                userOptional.get().getUsername(),
-                userOptional.get().getEmail(),
-                password, true, null, null);
         Object result;
         try {
+            result = authCallWebClint.doGet(String.format(URL_AUTH_FIND_BY_ID + "%d", userOptional.get().getUserId())).block();
+            var mapObject = tgConfig.getObjectToMapWithValueObject(result);
+            var person = new PersonDTO(
+                    (int) mapObject.get("id"),
+                    (String) mapObject.get("username"),
+                    (String) mapObject.get("email"),
+                    password,
+                    false,
+                    null,
+                    Calendar.getInstance(),
+                    false);
             result = authCallWebClint.doPost(URL_AUTH_FORGOT, person).block();
         } catch (Exception e) {
-            log.error("WebClient doPost error: {}", e.getMessage());
+            log.error("WebClient error: {}", e.getMessage());
             text = "Сервис не доступен попробуйте позже" + sl
                     + "/start";
             return new SendMessage(chatId, text);
