@@ -65,6 +65,7 @@ class ForgetActionTest {
         var password = "qwerty";
         when(telegramUserService.findByChatId(anyLong())).thenReturn(Optional.of(new TelegramUser()));
         when(tgConfig.getPassword()).thenReturn(password);
+        when(authCallWebClint.doGet(anyString())).thenReturn(Mono.just(personDTO));
         when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, String>() {{
             put("error", "Пользователь с такой почтой уже существует");
         }}));
