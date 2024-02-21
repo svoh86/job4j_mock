@@ -11,8 +11,9 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import reactor.core.publisher.Mono;
 import ru.checkdev.notification.domain.PersonDTO;
 import ru.checkdev.notification.service.TelegramUserService;
-import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
+import ru.checkdev.notification.telegram.util.TgConverterUtil;
+import ru.checkdev.notification.telegram.util.TgValidatorUtil;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -33,7 +34,9 @@ class RegActionTest {
     private final Long chatId = 123L;
     private final Chat chat = new Chat(chatId, "group");
     @MockBean
-    private TgConfig tgConfig;
+    private TgValidatorUtil tgValidatorUtil;
+    @MockBean
+    private TgConverterUtil tgConverterUtil;
 
     @BeforeEach
     void beforeEach() {
@@ -61,7 +64,7 @@ class RegActionTest {
     @Test
     void callbackWhenNotCorrectUsernameOrEmail() {
         message.setText("user/email");
-        when(!tgConfig.isUsernameAndEmail(message.getText())).thenReturn(true);
+        when(!tgValidatorUtil.isUsernameAndEmail(message.getText())).thenReturn(true);
         SendMessage actual = (SendMessage) regAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());
         assertThat(actual.getText()).contains("Введите данные в формате username/email");
@@ -70,7 +73,7 @@ class RegActionTest {
     @Test
     void callbackWhenServiceUnavailable() {
         message.setText("user/email@ya.ru");
-        when(!tgConfig.isUsernameAndEmail(message.getText())).thenReturn(false);
+        when(!tgValidatorUtil.isUsernameAndEmail(message.getText())).thenReturn(false);
         when(authCallWebClint.doPost(anyString(), any())).thenThrow(new RuntimeException());
         SendMessage actual = (SendMessage) regAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());
@@ -80,11 +83,11 @@ class RegActionTest {
     @Test
     void callbackWhenRegistrationError() {
         message.setText("user/email@ya.ru");
-        when(!tgConfig.isUsernameAndEmail(message.getText())).thenReturn(false);
-        when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, String>(){{
+        when(!tgValidatorUtil.isUsernameAndEmail(message.getText())).thenReturn(false);
+        when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, String>() {{
             put("error", "Пользователь с такой почтой уже существует");
         }}));
-        when(tgConfig.getObjectToMap(any())).thenReturn(Map.of("error", "error"));
+        when(tgConverterUtil.getObjectToMap(any())).thenReturn(Map.of("error", "error"));
         SendMessage actual = (SendMessage) regAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());
         assertThat(actual.getText()).contains("Ошибка регистрации");
@@ -94,12 +97,12 @@ class RegActionTest {
     void callbackWhenRegistrationSuccess() {
         PersonDTO personDTO = new PersonDTO();
         message.setText("user/email@ya.ru");
-        when(!tgConfig.isUsernameAndEmail(message.getText())).thenReturn(false);
-        when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, Object>(){{
+        when(!tgValidatorUtil.isUsernameAndEmail(message.getText())).thenReturn(false);
+        when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, Object>() {{
             put("person", personDTO);
         }}));
-        when(tgConfig.getObjectToMap(any())).thenReturn(Map.of("person", "person"));
-        when(tgConfig.getObjectToMapWithValueObject(any())).thenReturn(Map.of("person", personDTO));
+        when(tgConverterUtil.getObjectToMap(any())).thenReturn(Map.of("person", "person"));
+        when(tgConverterUtil.getObjectToMapWithValueObject(any())).thenReturn(Map.of("person", personDTO));
         SendMessage actual = (SendMessage) regAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());
         assertThat(actual.getText()).contains("Вы зарегистрированы:");

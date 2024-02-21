@@ -7,8 +7,8 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.checkdev.notification.domain.PersonDTO;
 import ru.checkdev.notification.service.TelegramUserService;
-import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
+import ru.checkdev.notification.telegram.util.TgConverterUtil;
 
 /**
  * 3. Мидл
@@ -21,7 +21,7 @@ public class UnsubscribeAction implements Action {
     private static final String URL_AUTH_PERSON_UNSUBSCRIBE = "/person/unsubscribe";
     private final TgAuthCallWebClint authCallWebClint;
     private final TelegramUserService telegramUserService;
-    private final TgConfig tgConfig = new TgConfig("tg/", 8);
+    private final TgConverterUtil tgConverterUtil = new TgConverterUtil();
 
     @Override
     public BotApiMethod<Message> handle(Message message) {
@@ -52,7 +52,7 @@ public class UnsubscribeAction implements Action {
             return new SendMessage(chatId, text);
         }
 
-        var mapObject = tgConfig.getObjectToMap(result);
+        var mapObject = tgConverterUtil.getObjectToMap(result);
         if (mapObject.containsKey(ERROR_OBJECT)) {
             text = "Ошибка отмены подписки: " + mapObject.get(ERROR_OBJECT);
             return new SendMessage(chatId, text);

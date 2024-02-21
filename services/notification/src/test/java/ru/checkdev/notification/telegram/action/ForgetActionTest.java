@@ -12,14 +12,15 @@ import reactor.core.publisher.Mono;
 import ru.checkdev.notification.domain.PersonDTO;
 import ru.checkdev.notification.domain.TelegramUser;
 import ru.checkdev.notification.service.TelegramUserService;
-import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
+import ru.checkdev.notification.telegram.util.TgConverterUtil;
+import ru.checkdev.notification.telegram.util.TgGeneratorPasswordUtil;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
@@ -34,7 +35,9 @@ class ForgetActionTest {
     private final Long chatId = 123L;
     private final Chat chat = new Chat(chatId, "group");
     @MockBean
-    private TgConfig tgConfig;
+    private TgGeneratorPasswordUtil tgGeneratorPasswordUtil;
+    @MockBean
+    private TgConverterUtil tgConverterUtil;
 
     @BeforeEach
     void beforeEach() {
@@ -64,12 +67,12 @@ class ForgetActionTest {
         PersonDTO personDTO = new PersonDTO();
         var password = "qwerty";
         when(telegramUserService.findByChatId(anyLong())).thenReturn(Optional.of(new TelegramUser()));
-        when(tgConfig.getPassword()).thenReturn(password);
+        when(tgGeneratorPasswordUtil.getPassword()).thenReturn(password);
         when(authCallWebClint.doGet(anyString())).thenReturn(Mono.just(personDTO));
         when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, String>() {{
             put("error", "Пользователь с такой почтой уже существует");
         }}));
-        when(tgConfig.getObjectToMap(any())).thenReturn(Map.of("error", "error"));
+        when(tgConverterUtil.getObjectToMap(any())).thenReturn(Map.of("error", "error"));
         SendMessage actual = (SendMessage) forgetAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());
         assertThat(actual.getText()).contains("Ошибка: Пользователь с такой почтой уже существует");
@@ -80,12 +83,12 @@ class ForgetActionTest {
         PersonDTO personDTO = new PersonDTO();
         var password = "qwerty";
         when(telegramUserService.findByChatId(anyLong())).thenReturn(Optional.of(new TelegramUser()));
-        when(tgConfig.getPassword()).thenReturn(password);
+        when(tgGeneratorPasswordUtil.getPassword()).thenReturn(password);
         when(authCallWebClint.doGet(anyString())).thenReturn(Mono.just(personDTO));
         when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, Object>() {{
             put("person", personDTO);
         }}));
-        when(tgConfig.getObjectToMap(any())).thenReturn(Map.of("person", "person"));
+        when(tgConverterUtil.getObjectToMap(any())).thenReturn(Map.of("person", "person"));
         SendMessage actual = (SendMessage) forgetAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());
         assertThat(actual.getText()).contains("Ваш новый пароль:");

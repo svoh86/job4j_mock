@@ -7,8 +7,9 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.checkdev.notification.domain.PersonDTO;
 import ru.checkdev.notification.service.TelegramUserService;
-import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
+import ru.checkdev.notification.telegram.util.TgConverterUtil;
+import ru.checkdev.notification.telegram.util.TgValidatorUtil;
 
 /**
  * 3. Мидл
@@ -19,9 +20,10 @@ import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
 public class SubscribeAction implements Action {
     private static final String ERROR_OBJECT = "error";
     private static final String URL_AUTH_PERSON_SUBSCRIBE = "/person/subscribe";
-    private final TgConfig tgConfig = new TgConfig("tg/", 8);
     private final TgAuthCallWebClint authCallWebClint;
     private final TelegramUserService telegramUserService;
+    private final TgConverterUtil tgConverterUtil = new TgConverterUtil();
+    private final TgValidatorUtil tgValidatorUtil = new TgValidatorUtil();
 
     @Override
     public BotApiMethod<Message> handle(Message message) {
@@ -56,7 +58,7 @@ public class SubscribeAction implements Action {
         var sourceString = message.getText();
         var text = "";
         var sl = System.lineSeparator();
-        if (!tgConfig.isEmailAndPassword(sourceString)) {
+        if (!tgValidatorUtil.isEmailAndPassword(sourceString)) {
             text = "Введите данные в формате email:password" + sl
                     + "попробуйте снова." + sl
                     + "/subscribe";
@@ -77,7 +79,7 @@ public class SubscribeAction implements Action {
             return new SendMessage(chatId, text);
         }
 
-        var mapObject = tgConfig.getObjectToMap(result);
+        var mapObject = tgConverterUtil.getObjectToMap(result);
         if (mapObject.containsKey(ERROR_OBJECT)) {
             text = "Ошибка оформления подписки: " + mapObject.get(ERROR_OBJECT);
             return new SendMessage(chatId, text);

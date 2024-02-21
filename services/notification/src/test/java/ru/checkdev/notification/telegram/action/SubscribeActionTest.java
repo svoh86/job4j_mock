@@ -9,11 +9,11 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import reactor.core.publisher.Mono;
-import ru.checkdev.notification.domain.PersonDTO;
 import ru.checkdev.notification.domain.TelegramUser;
 import ru.checkdev.notification.service.TelegramUserService;
-import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
+import ru.checkdev.notification.telegram.util.TgConverterUtil;
+import ru.checkdev.notification.telegram.util.TgValidatorUtil;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -35,7 +35,9 @@ class SubscribeActionTest {
     private final Long chatId = 123L;
     private final Chat chat = new Chat(chatId, "group");
     @MockBean
-    private TgConfig tgConfig;
+    private TgValidatorUtil tgValidatorUtil;
+    @MockBean
+    private TgConverterUtil tgConverterUtil;
 
     @BeforeEach
     void beforeEach() {
@@ -62,7 +64,7 @@ class SubscribeActionTest {
     @Test
     void callbackWhenNotCorrectEmailOrPassword() {
         message.setText("email:password");
-        when(!tgConfig.isEmailAndPassword(message.getText())).thenReturn(true);
+        when(!tgValidatorUtil.isEmailAndPassword(message.getText())).thenReturn(true);
         SendMessage actual = (SendMessage) subscribeAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());
         assertThat(actual.getText()).contains("Введите данные в формате email:password");
@@ -71,7 +73,7 @@ class SubscribeActionTest {
     @Test
     void callbackWhenServiceUnavailable() {
         message.setText("email@ya.ru:password");
-        when(!tgConfig.isEmailAndPassword(message.getText())).thenReturn(false);
+        when(!tgValidatorUtil.isEmailAndPassword(message.getText())).thenReturn(false);
         when(authCallWebClint.doPost(anyString(), any())).thenThrow(new RuntimeException());
         SendMessage actual = (SendMessage) subscribeAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());
@@ -81,11 +83,11 @@ class SubscribeActionTest {
     @Test
     void callbackWhenSubscribeError() {
         message.setText("email@ya.ru:password");
-        when(!tgConfig.isEmailAndPassword(message.getText())).thenReturn(false);
+        when(!tgValidatorUtil.isEmailAndPassword(message.getText())).thenReturn(false);
         when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, String>() {{
             put("error", "Пользователь не найден!");
         }}));
-        when(tgConfig.getObjectToMap(any())).thenReturn(Map.of("error", "error"));
+        when(tgConverterUtil.getObjectToMap(any())).thenReturn(Map.of("error", "error"));
         SendMessage actual = (SendMessage) subscribeAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());
         assertThat(actual.getText()).contains("Ошибка оформления подписки: Пользователь не найден!");
@@ -93,13 +95,12 @@ class SubscribeActionTest {
 
     @Test
     void callbackWhenSubscribeSuccess() {
-        PersonDTO personDTO = new PersonDTO();
         message.setText("email@ya.ru:password");
-        when(!tgConfig.isEmailAndPassword(message.getText())).thenReturn(false);
+        when(!tgValidatorUtil.isEmailAndPassword(message.getText())).thenReturn(false);
         when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, String>() {{
             put("ok", "ok");
         }}));
-        when(tgConfig.getObjectToMap(any())).thenReturn(Map.of("ok", "ok"));
+        when(tgConverterUtil.getObjectToMap(any())).thenReturn(Map.of("ok", "ok"));
         when(telegramUserService.findByChatId(chatId)).thenReturn(Optional.of(new TelegramUser()));
         SendMessage actual = (SendMessage) subscribeAction.callback(message);
         assertThat(actual.getChatId()).isEqualTo(chatId.toString());

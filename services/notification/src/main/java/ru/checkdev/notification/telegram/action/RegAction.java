@@ -8,8 +8,10 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.checkdev.notification.domain.PersonDTO;
 import ru.checkdev.notification.domain.TelegramUser;
 import ru.checkdev.notification.service.TelegramUserService;
-import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
+import ru.checkdev.notification.telegram.util.TgConverterUtil;
+import ru.checkdev.notification.telegram.util.TgGeneratorPasswordUtil;
+import ru.checkdev.notification.telegram.util.TgValidatorUtil;
 
 import java.util.Calendar;
 import java.util.Map;
@@ -23,10 +25,12 @@ import java.util.Map;
 public class RegAction implements Action {
     private static final String ERROR_OBJECT = "error";
     private static final String URL_AUTH_REGISTRATION = "/registration";
-    private final TgConfig tgConfig = new TgConfig("tg/", 8);
+    private final TgGeneratorPasswordUtil tgGeneratorPasswordUtil = new TgGeneratorPasswordUtil("tg/", 8);
     private final TgAuthCallWebClint authCallWebClint;
     private final String urlSiteAuth;
     private final TelegramUserService telegramUserService;
+    private final TgConverterUtil tgConverterUtil = new TgConverterUtil();
+    private final TgValidatorUtil tgValidatorUtil = new TgValidatorUtil();
 
     @Override
     public BotApiMethod<Message> handle(Message message) {
@@ -59,7 +63,7 @@ public class RegAction implements Action {
         var sourceString = message.getText();
         var text = "";
         var sl = System.lineSeparator();
-        if (!tgConfig.isUsernameAndEmail(sourceString)) {
+        if (!tgValidatorUtil.isUsernameAndEmail(sourceString)) {
             text = "Введите данные в формате username/email" + sl
                     + "попробуйте снова." + sl
                     + "/new";
@@ -69,7 +73,7 @@ public class RegAction implements Action {
         var username = strings[0];
         var email = strings[1];
 
-        var password = tgConfig.getPassword();
+        var password = tgGeneratorPasswordUtil.getPassword();
         var person = new PersonDTO(0, username, email, password, true, null,
                 Calendar.getInstance(), false);
         Object result;
@@ -82,13 +86,13 @@ public class RegAction implements Action {
             return new SendMessage(chatId, text);
         }
 
-        var mapObject = tgConfig.getObjectToMap(result);
+        var mapObject = tgConverterUtil.getObjectToMap(result);
         if (mapObject.containsKey(ERROR_OBJECT)) {
             text = "Ошибка регистрации: " + mapObject.get(ERROR_OBJECT);
             return new SendMessage(chatId, text);
         }
 
-        Map<String, Object> personMap = tgConfig.getObjectToMapWithValueObject(mapObject.get("person"));
+        Map<String, Object> personMap = tgConverterUtil.getObjectToMapWithValueObject(mapObject.get("person"));
         telegramUserService.save(
                 new TelegramUser(Long.parseLong(chatId), (int) personMap.get("id")));
         text = "Вы зарегистрированы: " + sl

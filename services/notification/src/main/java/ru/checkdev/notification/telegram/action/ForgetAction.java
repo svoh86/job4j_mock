@@ -8,8 +8,9 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.checkdev.notification.domain.PersonDTO;
 import ru.checkdev.notification.domain.TelegramUser;
 import ru.checkdev.notification.service.TelegramUserService;
-import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
+import ru.checkdev.notification.telegram.util.TgConverterUtil;
+import ru.checkdev.notification.telegram.util.TgGeneratorPasswordUtil;
 
 import java.util.Calendar;
 import java.util.Optional;
@@ -26,7 +27,8 @@ public class ForgetAction implements Action {
     private static final String URL_AUTH_FIND_BY_ID = "/profiles/";
     private final static String URL_AUTH_FORGOT = "/forgot";
     private static final String ERROR_OBJECT = "error";
-    private final TgConfig tgConfig = new TgConfig("tg/", 8);
+    private final TgGeneratorPasswordUtil tgGeneratorPasswordUtil = new TgGeneratorPasswordUtil("tg/", 8);
+    private final TgConverterUtil tgConverterUtil = new TgConverterUtil();
 
     @Override
     public BotApiMethod<Message> handle(Message message) {
@@ -44,11 +46,11 @@ public class ForgetAction implements Action {
                     + "/new";
             return new SendMessage(chatId, text);
         }
-        var password = tgConfig.getPassword();
+        var password = tgGeneratorPasswordUtil.getPassword();
         Object result;
         try {
             result = authCallWebClint.doGet(String.format(URL_AUTH_FIND_BY_ID + "%d", userOptional.get().getUserId())).block();
-            var mapObject = tgConfig.getObjectToMapWithValueObject(result);
+            var mapObject = tgConverterUtil.getObjectToMapWithValueObject(result);
             var person = new PersonDTO(
                     (int) mapObject.get("id"),
                     (String) mapObject.get("username"),
@@ -66,7 +68,7 @@ public class ForgetAction implements Action {
             return new SendMessage(chatId, text);
         }
 
-        var mapObject = tgConfig.getObjectToMap(result);
+        var mapObject = tgConverterUtil.getObjectToMap(result);
         if (mapObject.containsKey(ERROR_OBJECT)) {
             text = "Ошибка: " + mapObject.get(ERROR_OBJECT);
             return new SendMessage(chatId, text);

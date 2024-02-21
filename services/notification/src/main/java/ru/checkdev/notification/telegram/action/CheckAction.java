@@ -6,8 +6,8 @@ import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import ru.checkdev.notification.service.TelegramUserService;
-import ru.checkdev.notification.telegram.config.TgConfig;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
+import ru.checkdev.notification.telegram.util.TgConverterUtil;
 
 /**
  * 3. Мидл
@@ -19,7 +19,7 @@ public class CheckAction implements Action {
     private final TgAuthCallWebClint authCallWebClint;
     private final TelegramUserService telegramUserService;
     private static final String URL_AUTH_FIND_BY_ID = "/profiles/";
-    private final TgConfig tgConfig = new TgConfig("tg/", 8);
+    private final TgConverterUtil tgConverterUtil = new TgConverterUtil();
 
     @Override
     public BotApiMethod<Message> handle(Message message) {
@@ -46,7 +46,7 @@ public class CheckAction implements Action {
                     + "/start";
             return new SendMessage(chatId.toString(), text);
         }
-        var mapObject = tgConfig.getObjectToMapWithValueObject(result);
+        var mapObject = tgConverterUtil.getObjectToMapWithValueObject(result);
         text = "Ваши данные: " + sl
                 + "Username: " + mapObject.get("username") + sl
                 + "Email: " + mapObject.get("email") + sl;
