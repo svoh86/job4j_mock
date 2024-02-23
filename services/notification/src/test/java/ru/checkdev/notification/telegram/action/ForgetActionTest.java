@@ -63,22 +63,6 @@ class ForgetActionTest {
     }
 
     @Test
-    void callbackWhenRegistrationError() {
-        PersonDTO personDTO = new PersonDTO();
-        var password = "qwerty";
-        when(telegramUserService.findByChatId(anyLong())).thenReturn(Optional.of(new TelegramUser()));
-        when(tgGeneratorPasswordUtil.getPassword()).thenReturn(password);
-        when(authCallWebClint.doGet(anyString())).thenReturn(Mono.just(personDTO));
-        when(authCallWebClint.doPost(anyString(), any())).thenReturn(Mono.just(new LinkedHashMap<String, String>() {{
-            put("error", "Пользователь с такой почтой уже существует");
-        }}));
-        when(tgConverterUtil.getObjectToMap(any())).thenReturn(Map.of("error", "error"));
-        SendMessage actual = (SendMessage) forgetAction.callback(message);
-        assertThat(actual.getChatId()).isEqualTo(chatId.toString());
-        assertThat(actual.getText()).contains("Ошибка: Пользователь с такой почтой уже существует");
-    }
-
-    @Test
     void callbackWhenSuccess() {
         PersonDTO personDTO = new PersonDTO();
         var password = "qwerty";

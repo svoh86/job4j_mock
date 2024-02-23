@@ -60,17 +60,11 @@ public class ForgetAction implements Action {
                     null,
                     Calendar.getInstance(),
                     false);
-            result = authCallWebClint.doPost(URL_AUTH_FORGOT, person).block();
+            authCallWebClint.doPost(URL_AUTH_FORGOT, person).subscribe();
         } catch (Exception e) {
             log.error("WebClient error: {}", e.getMessage());
             text = "Сервис не доступен попробуйте позже" + sl
                     + "/start";
-            return new SendMessage(chatId, text);
-        }
-
-        var mapObject = tgConverterUtil.getObjectToMap(result);
-        if (mapObject.containsKey(ERROR_OBJECT)) {
-            text = "Ошибка: " + mapObject.get(ERROR_OBJECT);
             return new SendMessage(chatId, text);
         }
 
