@@ -85,7 +85,7 @@ class IndexControllerTest {
         var cat2 = new CategoryDTO(2, "name2");
         var topicIdNameDTO = new TopicIdNameDTO();
         var topicIdNameDTO2 = new TopicIdNameDTO();
-        Map<CategoryDTO, Long> categoriesMap = Map.of(cat1, 2L);
+        List<CategoryDTO> categories = List.of(cat1, cat2);
         var listCat = List.of(cat1, cat2);
         var firstInterview = new InterviewDTO(1, 1, 1, 1,
                 "interview1", "description1", "contact1",
@@ -101,8 +101,9 @@ class IndexControllerTest {
         when(categoriesService.getMostPopular()).thenReturn(listCat);
         when(interviewsService.getByType(1)).thenReturn(listInterviews);
         when(topicsService.getTopicIdNameDtoByCategory(cat1.getId())).thenReturn(List.of(topicIdNameDTO, topicIdNameDTO2));
-        when(interviewsService.getByTopicId(topicIdNameDTO.getId(), 0, Integer.MAX_VALUE)).thenReturn(interviewDTOPage);
-        when(mock(PageImpl.class).getTotalElements()).thenReturn(2L);
+        when(topicsService.getTopicIdNameDtoByCategory(cat2.getId())).thenReturn(List.of(topicIdNameDTO, topicIdNameDTO2));
+        when(interviewsService.getByTopicsIds(List.of(0, 0), 0, Integer.MAX_VALUE)).thenReturn(interviewDTOPage);
+        when(mock(PageImpl.class).getTotalElements()).thenReturn(1L);
 
         var listBread = List.of(new Breadcrumb("Главная", "/"));
         var model = new ConcurrentModel();
@@ -113,7 +114,7 @@ class IndexControllerTest {
         var actualInterviews = model.getAttribute("new_interviews");
 
         assertThat(view).isEqualTo("index");
-        assertThat(actualCategories).usingRecursiveComparison().isEqualTo(categoriesMap);
+        assertThat(actualCategories).usingRecursiveComparison().isEqualTo(categories);
         assertThat(actualBreadCrumbs).usingRecursiveComparison().isEqualTo(listBread);
         assertThat(actualUserInfo).isNull();
         assertThat(actualInterviews).usingRecursiveComparison().isEqualTo(listInterviews);
