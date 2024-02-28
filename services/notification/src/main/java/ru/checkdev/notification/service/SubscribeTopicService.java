@@ -1,14 +1,21 @@
 package ru.checkdev.notification.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
+import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
+import ru.checkdev.notification.domain.SubscribeCategory;
 import ru.checkdev.notification.domain.SubscribeTopic;
 import ru.checkdev.notification.repository.SubscribeTopicRepository;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
+@EnableKafka
 public class SubscribeTopicService {
     private final SubscribeTopicRepository repository;
 
@@ -16,8 +23,11 @@ public class SubscribeTopicService {
         return repository.findAll();
     }
 
-    public SubscribeTopic save(SubscribeTopic subscribeTopic) {
-        return repository.save(subscribeTopic);
+    @KafkaListener(topics = "site_addSubscribeTopic", groupId = "group-id")
+    public SubscribeTopic save(String subscribeTopic) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        SubscribeTopic value = objectMapper.readValue(subscribeTopic, SubscribeTopic.class);
+        return repository.save(value);
     }
 
     public List<Integer> findTopicByUserId(int userId) {
@@ -26,10 +36,13 @@ public class SubscribeTopicService {
                 .collect(Collectors.toList());
     }
 
-    public SubscribeTopic delete(SubscribeTopic subscribeTopic) {
+    @KafkaListener(topics = "site_deleteSubscribeTopic", groupId = "group-id")
+    public SubscribeTopic delete(String subscribeTopic) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        SubscribeTopic value = objectMapper.readValue(subscribeTopic, SubscribeTopic.class);
         SubscribeTopic rsl = repository
-                .findByUserIdAndTopicId(subscribeTopic.getUserId(), subscribeTopic.getTopicId());
+                .findByUserIdAndTopicId(value.getUserId(), value.getTopicId());
         repository.delete(rsl);
-        return subscribeTopic;
+        return value;
     }
 }

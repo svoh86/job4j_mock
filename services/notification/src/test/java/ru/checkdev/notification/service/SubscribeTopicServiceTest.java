@@ -1,5 +1,7 @@
 package ru.checkdev.notification.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +14,9 @@ import ru.checkdev.notification.domain.SubscribeTopic;
 import ru.checkdev.notification.telegram.TgRun;
 import ru.checkdev.notification.telegram.service.TgAuthCallWebClint;
 import ru.checkdev.notification.web.TemplateController;
+
 import java.util.List;
+
 import static org.junit.Assert.*;
 
 @SpringBootTest(classes = NtfSrv.class)
@@ -30,25 +34,29 @@ public class SubscribeTopicServiceTest {
 
     @MockBean
     private TemplateController templateController;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    public void whenGetAllSubTopicReturnContainsValue() {
-        SubscribeTopic subscribeTopic = this.service.save(new SubscribeTopic(0, 1, 1));
+    public void whenGetAllSubTopicReturnContainsValue() throws JsonProcessingException {
+        SubscribeTopic subscribeTopic = this.service.save(
+                objectMapper.writeValueAsString(new SubscribeTopic(0, 1, 1)));
         List<SubscribeTopic> result = this.service.findAll();
         assertTrue(result.contains(subscribeTopic));
     }
 
     @Test
-    public void requestByUserIdReturnCorrectValue() {
-        SubscribeTopic subscribeTopic = this.service.save(new SubscribeTopic(1, 2, 2));
+    public void requestByUserIdReturnCorrectValue() throws JsonProcessingException {
+        SubscribeTopic subscribeTopic = this.service.save(
+                objectMapper.writeValueAsString(new SubscribeTopic(1, 2, 2)));
         List<Integer> result = this.service.findTopicByUserId(subscribeTopic.getUserId());
         assertEquals(result, List.of(2));
     }
 
     @Test
-    public void whenDeleteTopicCatItIsNotExist() {
-        SubscribeTopic subscribeTopic = this.service.save(new SubscribeTopic(2, 3, 3));
-        subscribeTopic = this.service.delete(subscribeTopic);
+    public void whenDeleteTopicCatItIsNotExist() throws JsonProcessingException {
+        SubscribeTopic subscribeTopic = this.service.save(
+                objectMapper.writeValueAsString(new SubscribeTopic(2, 3, 3)));
+        subscribeTopic = this.service.delete(String.valueOf(subscribeTopic));
         List<SubscribeTopic> result = this.service.findAll();
         assertFalse(result.contains(subscribeTopic));
     }

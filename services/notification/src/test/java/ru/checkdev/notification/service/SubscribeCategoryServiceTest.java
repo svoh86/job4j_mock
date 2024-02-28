@@ -1,5 +1,7 @@
 package ru.checkdev.notification.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,25 +34,30 @@ public class SubscribeCategoryServiceTest {
 
     @MockBean
     private TemplateController templateController;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    public void whenGetAllSubCatReturnContainsValue() {
-        SubscribeCategory subscribeCategory = this.service.save(new SubscribeCategory(0, 1, 1));
+    public void whenGetAllSubCatReturnContainsValue() throws JsonProcessingException {
+        SubscribeCategory subscribeCategory = this.service.save(
+                objectMapper.writeValueAsString(new SubscribeCategory(0, 1, 1)));
         List<SubscribeCategory> result = this.service.findAll();
         assertTrue(result.contains(subscribeCategory));
     }
 
     @Test
-    public void requestByUserIdReturnCorrectValue() {
-        SubscribeCategory subscribeCategory = this.service.save(new SubscribeCategory(1, 2, 2));
+    public void requestByUserIdReturnCorrectValue() throws JsonProcessingException {
+        SubscribeCategory subscribeCategory = this.service.save(
+                objectMapper.writeValueAsString(new SubscribeCategory(1, 2, 2)));
         List<Integer> result = this.service.findCategoriesByUserId(subscribeCategory.getUserId());
         assertEquals(result, List.of(2));
     }
 
     @Test
-    public void whenDeleteSubCatItIsNotExist() {
-        SubscribeCategory subscribeCategory = this.service.save(new SubscribeCategory(2, 3, 3));
-        subscribeCategory = this.service.delete(subscribeCategory);
+    public void whenDeleteSubCatItIsNotExist() throws JsonProcessingException {
+        SubscribeCategory subscribeCategory = this.service.save(
+                objectMapper.writeValueAsString(new SubscribeCategory(2, 3, 3)));
+        String s = objectMapper.writeValueAsString(subscribeCategory);
+        subscribeCategory = this.service.delete(s);
         List<SubscribeCategory> result = this.service.findAll();
         assertFalse(result.contains(subscribeCategory));
     }
